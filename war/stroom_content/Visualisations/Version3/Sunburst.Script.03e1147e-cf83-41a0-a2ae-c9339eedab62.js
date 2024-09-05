@@ -26,8 +26,6 @@ if (!visualisations) {
         var radius, partition, arc, svgGroup, nodes, path, visSettings;
         var width = commonFunctions.gridAwareWidthFunc(true, containerNode, element, margins);
         var height = commonFunctions.gridAwareHeightFunc(true, containerNode, element, margins);
-        // var width;
-        // var height;
         var svg;
         var tip;
         var inverseHighlight;
@@ -36,10 +34,10 @@ if (!visualisations) {
 
         var color = commonConstants.categoryGoogle();
 
-        // var zoom = d3.behavior.zoom()
-        //     .scaleExtent([0.1, 10])
-        //     .on("zoom", zoomed);
-        // zoom.translate([width / 2, height / 2]);
+        var zoom = d3.behavior.zoom()
+            .scaleExtent([0.1, 10])
+            .on("zoom", zoomed);
+        zoom.translate([width / 2, height / 2]);
 
         //Called by GenericGrid to create a new instance of the visualisation for each cell.
         this.getInstance = function(containerNode) {
@@ -147,7 +145,7 @@ if (!visualisations) {
                     .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
             // Apply zoom behavior to the g element
-            // svg.call(zoom);
+            svg.call(zoom);
 
             x = d3.scale.linear()
                 .range([0, 2 * Math.PI]);
@@ -447,12 +445,12 @@ if (!visualisations) {
         // }
 
             
-        // function zoomed() {
-        //     // Apply translation and scaling to the arcs
-        //     svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        function zoomed() {
+            // Apply translation and scaling to the arcs
+            svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
             
-        //     updateLabels();            
-        // }
+            // updateLabels();            
+        }
 
         // Used to provide the visualisation's D3 colour scale to the grid
         this.getColourScale = function() {
