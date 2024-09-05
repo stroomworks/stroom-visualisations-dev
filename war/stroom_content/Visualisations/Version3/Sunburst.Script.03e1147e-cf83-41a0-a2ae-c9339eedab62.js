@@ -174,31 +174,30 @@ if (!visualisations) {
             //     node.visible = true;
             // });
 
-            // if (typeof(tip) == "undefined") {
-            //     // initializeRoot(d);
-            //     inverseHighlight = commonFunctions.inverseHighlight();
+            if (typeof(tip) == "undefined") {
+                // initializeRoot(d);
+                inverseHighlight = commonFunctions.inverseHighlight();
 
-            //     inverseHighlight.toSelectionItem = function(d) {
-            //         var selection = {
-            //             key: d.name,
-            //             value: d.value,
-            //         };
-            //         return selection;
-            //     };
+                inverseHighlight.toSelectionItem = function(d) {
+                    var selection = {
+                        key: d.name,
+                        value: d.value,
+                    };
+                    return selection;
+                };
 
-            //     tip = inverseHighlight.tip()
-            //         .html(function(tipData) {
-            //             var html = inverseHighlight.htmlBuilder()
-            //                 .addTipEntry("Name", commonFunctions.autoFormat(tipData.values.name))
-            //                 .addTipEntry("Value", commonFunctions.autoFormat(tipData.values.value))
-            //                 .build();
-            //             return html;
-            //         });
-            // }
+                tip = inverseHighlight.tip()
+                    .html(function(tipData) {
+                        var html = inverseHighlight.htmlBuilder()
+                            .addTipEntry("Name", commonFunctions.autoFormat(tipData.values.name))
+                            .addTipEntry("Value", commonFunctions.autoFormat(tipData.values.value))
+                            .build();
+                        return html;
+                    });
+            }
 
-            // svg.call(tip);
+            svg.call(tip);
                     
-
             svg.selectAll("path")
                     .data(partition.nodes(d.values[0]))
                 .enter().append("path")
@@ -212,11 +211,11 @@ if (!visualisations) {
 
             // updateLabels();
 
-            // commonFunctions.addDelegateEvent(svg, "mouseover", "path", inverseHighlight.makeInverseHighlightMouseOverHandler(stroomData.key, stroomData.types, svg, "path"));
-            // commonFunctions.addDelegateEvent(svg, "mouseout", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
+            commonFunctions.addDelegateEvent(svg, "mouseover", "path", inverseHighlight.makeInverseHighlightMouseOverHandler(stroomData.key, stroomData.types, svg, "path"));
+            commonFunctions.addDelegateEvent(svg, "mouseout", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
 
-            // commonFunctions.addDelegateEvent(svg, "mousewheel", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
-            // commonFunctions.addDelegateEvent(svg, "mousedown", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
+            commonFunctions.addDelegateEvent(svg, "mousewheel", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
+            commonFunctions.addDelegateEvent(svg, "mousedown", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
         };
 
         function click(d) {
