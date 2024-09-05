@@ -139,11 +139,7 @@ if (!visualisations) {
             height = commonFunctions.gridAwareHeightFunc(true, containerNode, element, margins);
             radius = Math.min(width, height) / 2;
 
-            console.log("Width: " + width);
-            console.log("Height: " + height);
-            console.log("Radius: " + radius);
-
-            // d3.select(element).select("svg").remove();
+            d3.select(element).select("svg").remove();
             svg = d3.select(element).append("svg")
                     .attr("width", width)
                     .attr("height", height)
@@ -159,12 +155,8 @@ if (!visualisations) {
             y = d3.scale.sqrt()
                 .range([0, radius]);
 
-
-            
             partition = d3.layout.partition()
-                .value(function(d) { 
-                    console.log("size " + d.value);
-                    return d.value; }); 
+                .value(function(d) { return d.value; }); 
 
             arc = d3.svg.arc()
                 .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x))); })
@@ -212,13 +204,12 @@ if (!visualisations) {
             svg.selectAll("path")
                     .data(partition.nodes(d.values[0]))
                 .enter().append("path")
-                    // .attr("display", null)
                     .attr("d", arc)
                     .style("stroke", "var(--vis__background-color)")
                     .style("fill", function(d) {
                         return color((d.children ? d : d.parent).name);
                     })
-                    // .style("fill-rule", "evenodd")
+                    .style("fill-rule", "evenodd")
                     .on("click", click);
 
             // updateLabels();
