@@ -121,15 +121,11 @@ if (!visualisations) {
     
             if (data) {
                 stroomData = data;
-                update(500, data.values[0], settings);
+                update(data.values[0], settings);
             }
         };
 
-        // Variable to store the expanded state
-        let expandedNode = null;
-
-        // Function to update the visualization
-        var update = function(duration, d, settings) {
+        var update = function(d, settings) {
             visSettings = settings;
 
             // Calculate dimensions and radius
@@ -161,18 +157,6 @@ if (!visualisations) {
                 .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx))); })
                 .innerRadius(function(d) { return Math.max(0, y(d.y)); })
                 .outerRadius(function(d) { return Math.max(0, y(d.y + d.dy)); });
-
-
-            // Update nodes based on the expanded state
-            // if (expandedNode) {
-            //     nodes = partition.nodes(expandedNode);
-            // } else {
-            //     nodes = partition.nodes(d.values[0]);
-            // }
-
-            // nodes.forEach(function(node) {
-            //     node.visible = true;
-            // });
 
             if (typeof(tip) == "undefined") {
                 // initializeRoot(d);
@@ -209,7 +193,7 @@ if (!visualisations) {
                     .style("fill-rule", "evenodd")
                     .on("click", click);
 
-            // updateLabels();
+            updateLabels();
 
             commonFunctions.addDelegateEvent(svg, "mouseover", "path", inverseHighlight.makeInverseHighlightMouseOverHandler(stroomData.key, stroomData.types, svg, "path"));
             commonFunctions.addDelegateEvent(svg, "mouseout", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
@@ -219,6 +203,7 @@ if (!visualisations) {
         };
 
         function click(d) {
+            svg.selectAll("text.label").remove();
             svg.transition()
                 .duration(750)
                 .tween("scale", function() {
@@ -228,7 +213,8 @@ if (!visualisations) {
                   return function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); };
                 })
               .selectAll("path")
-                .attrTween("d", function(d) { return function() { return arc(d); }; });
+                .attrTween("d", function(d) { return function() { return arc(d); }; })
+                .each("end", updateLabels);
         }
 
         //d3.select(self.frameElement).style("height", height + "px");
@@ -298,75 +284,74 @@ if (!visualisations) {
         //     }
         // }
 
-        // // Helper functions for visibility checks
-        // function arcVisible(d) {
-        //     return d.y + d.dy <= 3 && d.y >= 1 && d.x + d.dx > d.x;
-        // }
+        // Helper functions for visibility checks
+        function isArcVisible(d) {
+            return d.x >= x.domain()[0] && (d.x + d.dx) <= x.domain()[1] && d.depth <= 2;
+        }
 
-        // function updateLabels() {
-        //     svgGroup.selectAll("text.label").remove();
-        //     svgGroup.selectAll("text.explode-button").remove();
-        //     svgGroup.selectAll("text.back-button").remove();
+        function updateLabels() {
 
-        //     path.each(function(d) {
-        //         if (d.visible && commonFunctions.isTrue(visSettings.showLabels)) {
-        //             var centroid = arc.centroid(d);
-        //             var startAngle = d.x;
-        //             var endAngle = d.x + d.dx;
-        //             var innerRadius = d.y;
-        //             var outerRadius = d.y + d.dy;
-        //             var arcLength = (endAngle - startAngle) * (outerRadius + innerRadius) / 2;
-        //             var scale = d3.event && d3.event.scale ? d3.event.scale : 1;
-        //             var fontSize = 13 / scale;
+            svg.selectAll("path").each(function(d) {
+                if (isArcVisible(d) && commonFunctions.isTrue(visSettings.showLabels)) {
+                    var centroid = arc.centroid(d);
 
-        //             // Create a temporary text element to measure the text width
-        //             var tempText = svg.append("text")
-        //                 .attr("class", "temp-text")
-        //                 .attr("text-anchor", "middle")
-        //                 .style("font-size", fontSize + "px")
-        //                 .style("visibility", "hidden")
-        //                 .text(function() {
-        //                     if (d.name != null) {
-        //                         return commonFunctions.autoFormat(d.name, visSettings.nameDateFormat);
-        //                     } else {
-        //                         return commonFunctions.autoFormat(d.series, visSettings.seriesDateFormat);
-        //                     }
-        //                 });
+                    var startAngle = d.x * 2 * Math.PI;
+                    var endAngle = (d.x + d.dx) * 2 * Math.PI;
+                    var innerRadius = d.y * radius;
+                    var outerRadius = (d.y + d.dy) * radius;
 
-        //             var textWidth = tempText.node().getComputedTextLength();
-        //             tempText.remove();
+                    var arcLength = (endAngle - startAngle) * (outerRadius + innerRadius) / 2;
+                    var scale = d3.event && d3.event.scale ? d3.event.scale : 1;
+                    var fontSize = 13 / scale;
 
-        //             if (textWidth < arcLength) {
-        //                 var angle = (startAngle + endAngle) / 2;
-        //                 angle = angle * (180 / Math.PI) + 90; // Convert to degrees
+                    // Create a temporary text element to measure the text width
+                    var tempText = svg.append("text")
+                        .attr("class", "temp-text")
+                        .attr("text-anchor", "middle")
+                        .style("font-size", fontSize + "px")
+                        .style("visibility", "hidden")
+                        .text(function() {
+                            if (d.name != null) {
+                                return commonFunctions.autoFormat(d.name, visSettings.nameDateFormat);
+                            } else {
+                                return commonFunctions.autoFormat(d.series, visSettings.seriesDateFormat);
+                            }
+                        });
 
-        //                 // Adjust the angle to keep the text upright
-        //                 if (angle > 90 && angle < 270) {
-        //                     angle += 180;
-        //                 }
-        //                 if (d.depth == 0) {
-        //                     angle = 0;
-        //                 }
+                    var textWidth = tempText.node().getComputedTextLength();
+                    tempText.remove();
 
-        //                 svgGroup.append("text")
-        //                     .attr("class", "label")
-        //                     .attr("transform", "translate(" + centroid[0] + "," + centroid[1] + ") rotate(" + angle + ")")
-        //                     .attr("text-anchor", "middle")
-        //                     .attr("dy", ".35em")
-        //                     .style("pointer-events", "none")
-        //                     .style("font-size", fontSize + "px")
-        //                     .style("text-rendering", "geometricPrecision")
-        //                     .text(function() {
-        //                         if (d.name != null) {
-        //                             return commonFunctions.autoFormat(d.name, visSettings.nameDateFormat);
-        //                         } else {
-        //                             return commonFunctions.autoFormat(d.series, visSettings.seriesDateFormat);
-        //                         }
-        //                     });
-        //             }
-        //         }
-        //     });
-        // }
+                    if (textWidth < arcLength) {
+                        var angle = (startAngle + endAngle) / 2;
+                        angle = angle * (180 / Math.PI) + 90; // Convert to degrees
+
+                        // Adjust the angle to keep the text upright
+                        if (angle > 90 && angle < 270) {
+                            angle += 180;
+                        }
+                        if (d.depth == 0) {
+                            angle = 0;
+                        }
+
+                        svg.append("text")
+                            .attr("class", "label")
+                            .attr("transform", "translate(" + centroid[0] + "," + centroid[1] + ") rotate(" + angle + ")")
+                            .attr("text-anchor", "middle")
+                            .attr("dy", ".35em")
+                            .style("pointer-events", "none")
+                            .style("font-size", fontSize + "px")
+                            .style("text-rendering", "geometricPrecision")
+                            .text(function() {
+                                if (d.name != null) {
+                                    return commonFunctions.autoFormat(d.name, visSettings.nameDateFormat);
+                                } else {
+                                    return commonFunctions.autoFormat(d.series, visSettings.seriesDateFormat);
+                                }
+                            });
+                    }
+                }
+            });
+        }
 
         // Global object to keep track of previous states
         // var previousStates = {};
@@ -447,8 +432,8 @@ if (!visualisations) {
         function zoomed() {
             // Apply translation and scaling to the arcs
             svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-            
-            // updateLabels();            
+            svg.selectAll("text.label").remove();
+            updateLabels();            
         }
 
         // Used to provide the visualisation's D3 colour scale to the grid
