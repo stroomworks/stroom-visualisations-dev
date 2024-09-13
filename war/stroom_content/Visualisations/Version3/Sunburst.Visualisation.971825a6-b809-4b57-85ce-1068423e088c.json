@@ -1,0 +1,94 @@
+{
+    "tabs": [
+        {
+            "name": "Data",
+            "controls": [
+                {
+                    "id": "path",
+                    "type": "field",
+                    "label": "Path"
+                },
+                {
+                    "id": "value",
+                    "type": "field",
+                    "label": "Value"
+                },
+                {
+                    "id": "gridSeries",
+                    "type": "field",
+                    "label": "Grid Series"
+                }
+            ]
+        },
+        {
+            "name": "Sunburst",
+            "controls": [
+                {
+                    "id": "maxValues",
+                    "type": "number",
+                    "label": "Max Values",
+                    "defaultValue": "500",
+                    "max": "10000",
+                    "min": "1"
+                },
+                {
+                    "id": "maxGridSeries",
+                    "type": "number",
+                    "label": "Max Grid Series",
+                    "defaultValue": "36",
+                    "min": "1",
+                    "max": "144"
+                },
+                {
+                    "id" : "gridSeriesDateFormat",
+                    "type" : "text",
+                    "label" : "Grid Series Date Format (opt.)",
+                    "defaultValue" : ""
+                }
+
+            ]
+        }
+    ],
+    "data": {
+        "structure": {
+            "nest": {
+                "key": {
+                    "id": "${gridSeries}",
+                    "sort": {
+                        "enabled": "false"
+                    }
+                },
+                "nest": {
+                    "key": {
+                        "id": "${series}",
+                        "sort": {
+                            "enabled": "false"
+                        }
+                    },
+                    "values": {
+                        "fields": [
+                            {
+                                "id": "${path}"
+                            },
+                            {
+                                "id": "${value}"
+                            }
+                        ],
+                        "limit" : {
+                            "enabled" : "true",
+                            "size" : "${maxValues}"
+                        }
+                    },
+                    "limit": {
+                        "enabled": "true",
+                        "size": "1"
+                    }
+                },
+                "limit": {
+                    "enabled": "true",
+                    "size": "${maxGridSeries}"
+                }
+            }
+        }
+    }
+}
