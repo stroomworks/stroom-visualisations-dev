@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 if (!visualisations) {
     var visualisations = {};
 }
@@ -30,6 +46,8 @@ if (!visualisations) {
         var inverseHighlight;
         var stroomData;
         var x,y;
+
+        var delimiter = '/'; // default delimiter
 
         var color = commonConstants.categoryGoogle();
 
@@ -114,18 +132,75 @@ if (!visualisations) {
                     colour = context.color;
                 }
             }
+
+            if (settings.delimiter) {
+                delimiter = settings.delimiter;
+            }
     
             if (data) {
                 stroomData = data;
-                update(500, data.values[0], settings);
+                let formattedData = arrayToHierarchy(data.values[0].values);
+                console.log(formattedData);
+                update(500, formattedData, settings);
             }
         };
+
+        function arrayToHierarchy(arr) {
+            // Helper function to recursively create or find a node
+            function findOrCreateNode(children, name) {
+              let node = children.find(child => child.name === name);
+              if (!node) {
+                node = { name: name, children: [] };
+                children.push(node);
+              }
+              return node;
+            }
+          
+            const rootName = arr[0][0].split('/')[0];
+            let root = { name: rootName, children: [] };
+                    
+            // Iterate through each path-value pair in the input array
+            arr.forEach(([path, value]) => {
+
+            // Default delimiter
+              const pathParts = path.split(delimiter);
+              let currentNode = root;
+          
+              // Traverse the path and build the hierarchy
+              for (let i = 1; i < pathParts.length; i++) {
+                const part = pathParts[i];
+                
+                // If it's the last part, it's a leaf node, so add the value
+                if (i === pathParts.length - 1) {
+                  currentNode.children.push({ name: part, value: value });
+                } else {
+                  // Find or create the next node in the path
+                  currentNode = findOrCreateNode(currentNode.children, part);
+                }
+              }
+            });
+          
+            // Helper function to recursively calculate sums for non-leaf nodes
+            function calculateSums(node) {
+              if (node.children && node.children.length > 0) {
+                node.value = node.children.reduce((sum, child) => {
+                  return sum + calculateSums(child);
+                }, 0);
+              }
+              return node.value || 0;
+            }
+          
+            // Calculate sums for non-leaf nodes
+            calculateSums(root);
+          
+            return root;
+          }
 
         // Variable to store the expanded state
         let expandedNode = null;
 
         // Function to update the visualization
-        var update = function(duration, d, settings) {
+        var update = function(duration, formattedData, settings) {
             visSettings = settings;
 
             // Calculate dimensions and radius
@@ -166,7 +241,7 @@ if (!visualisations) {
             if (expandedNode) {
                 nodes = partition.nodes(expandedNode);
             } else {
-                nodes = partition.nodes(d.values[0]);
+                nodes = partition.nodes(formattedData);
             }
 
             nodes.forEach(function(node) {
@@ -215,12 +290,10 @@ if (!visualisations) {
                 .on("click", function(d) {
                     if (d.depth == 0 && d.parent){
                         expandArc(d.parent);
-                        animation(d, duration);
                         update(500, d, visSettings);
                     }
                     else if (d.children && d.children.length > 0) {
                         expandArc(d);
-                        animation(d, duration);
                         update(500, d, visSettings);
                     }
                 });
@@ -237,19 +310,6 @@ if (!visualisations) {
            commonFunctions.addDelegateEvent(svg, "mousewheel", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
            commonFunctions.addDelegateEvent(svg, "mousedown", "path", inverseHighlight.makeInverseHighlightMouseOutHandler(svg, "path"));
         };
-
-        function animation(d, duration) {
-            svgGroup.transition()
-                .duration(duration)
-                .tween("scale", function() {
-                  var xd = d3.interpolate(x.domain(), [d.x, d.x + d.dx]),
-                      yd = d3.interpolate(y.domain(), [d.y, 1]),
-                      yr = d3.interpolate(y.range(), [d.y ? 20 : 0, radius]);
-                  return function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); };
-                })
-              .selectAll("path")
-                .attrTween("d", function(d) { return function() { return arc(d); }; });
-        }
 
         function updateLabels() {
             svgGroup.selectAll("text.label").remove();
@@ -338,7 +398,6 @@ if (!visualisations) {
             var newPath = svgGroup.selectAll("path")
                 .data(nodes)
                 .enter().append("path")
-                .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
                 .attr("d", arc)
                 .style("stroke", "var(--vis__background-color)")
                 .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
